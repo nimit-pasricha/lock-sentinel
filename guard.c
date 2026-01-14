@@ -20,7 +20,7 @@ __attribute__((constructor)) void init_guard()
 
     if (!real_lock_fn || !real_unlock_fn)
     {
-        fprintf(stderr, "[FATAL] init_guard: Failed to find real pthread functions.\n");
+        fprintf(stderr, "[ERROR] init_guard: Failed to find real pthread functions.\n");
     }
     else
     {
@@ -29,3 +29,16 @@ __attribute__((constructor)) void init_guard()
 }
 
 // TODO: write wrappers
+int pthread_mutex_lock(pthread_mutex_t *mutex)
+{
+    // stderr because unbuffered
+    fprintf(stderr, "[INFO] Thread %lu requesting lock %p\n",
+            (unsigned long)pthread_self(), (void *)mutex);
+
+    int result = real_lock_fn(mutex);
+    
+    fprintf(stderr, "[INFO] Thread %lu acquired lock %p\n",
+            (unsigned long)pthread_self(), (void *)mutex);
+
+    return result;
+}
