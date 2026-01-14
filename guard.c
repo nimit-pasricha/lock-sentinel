@@ -17,4 +17,10 @@ void init_guard() {
     // RTLD_NEXT to skip the one in this file and find the next one in library order. 
     real_lock_fn = (pthread_mutex_lock_t) dlsym(RTLD_NEXT, "pthread_mutex_lock");
     real_unlock_fn = (pthread_mutex_lock_t) dlsym(RTLD_NEXT, "pthread_mutex_unlock");
+
+    if (!real_lock_fn || !real_unlock_fn) {
+        fprintf(stderr, "[FATAL] init_guard: Failed to find real pthread functions.\n");
+    } else {
+        fprintf(stderr, "[INFO] init_guard: Library loaded successfully.\n");
+    }
 }
