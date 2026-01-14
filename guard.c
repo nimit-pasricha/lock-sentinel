@@ -38,7 +38,15 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
     int result = real_lock_fn(mutex);
     
     fprintf(stderr, "[INFO] Thread %lu acquired lock %p\n",
-            (unsigned long)pthread_self(), (void *)mutex);
+            (unsigned long int)pthread_self(), (void *)mutex);
 
     return result;
+}
+
+int pthread_mutex_unlock(pthread_mutex_t *mutex)
+{
+    fprintf(stderr, "[INFO] Thread %lu releasing lock %p\n", 
+            (unsigned long int)pthread_self(), (void*)mutex);
+    
+    return real_unlock(mutex);
 }
