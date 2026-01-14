@@ -48,5 +48,5 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex)
     fprintf(stderr, "[INFO] Thread %lu releasing lock %p\n", 
             (unsigned long int)pthread_self(), (void*)mutex);
     
-    return real_unlock(mutex);
+    return real_unlock_fn(mutex);
 }
