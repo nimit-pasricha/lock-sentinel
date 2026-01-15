@@ -4,6 +4,17 @@
 
 #define TABLE_SIZE 1024
 
+// This will probably give us balls performance. Maybe try reader-writer
+static pthread_mutex_t graph_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void tables_lock_graph() {
+    pthread_mutex_lock(&graph_lock);
+}
+
+void tables_unlock_graph() {
+    pthread_mutex_unlock(&graph_lock);
+}
+
 // -------- Lock owned by Thread HashTable --------
 
 static lock_node_t* lock_table[TABLE_SIZE];

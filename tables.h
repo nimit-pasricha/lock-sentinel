@@ -3,6 +3,9 @@
 
 #include <pthread.h>
 
+void lock_graph();
+void unlock_graph();
+
 typedef struct lock_node {
   pthread_mutex_t* lock_addr;  // Key
   pthread_t owner_thread;      // Value
