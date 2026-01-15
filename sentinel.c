@@ -87,22 +87,24 @@ __attribute__((constructor)) void init_guard()
 // TODO: write wrapers
 int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
-    // stderr because unbuffered
-    fprintf(stderr, "[INFO] Thread %lu requesting lock %p\n",
-            (unsigned long)pthread_self(), (void *)mutex);
+    pthread_t curr_thread_id = pthread_self();
 
     int result = real_lock_fn(mutex);
-
-    fprintf(stderr, "[INFO] Thread %lu acquired lock %p\n",
-            (unsigned long int)pthread_self(), (void *)mutex);
+    if (result == 0)
+    {
+        // NOTE: make sure you use the real_ locks otherwise we infinite loop
+        real_lock_fn(&sentinel_global_lock);
+        register_lock(mutex, curr_thread_id);
+        real_unlock_fn(&sentinel_global_lock);
+    }
 
     return result;
 }
 
 int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
-    fprintf(stderr, "[INFO] Thread %lu releasing lock %p\n",
-            (unsigned long int)pthread_self(), (void *)mutex);
-
+    real_lock(&sentinel_global_lock);
+    unregister_lock(mutex);
+    real_unlock_fn(&sentinel_global_lock);
     return real_unlock_fn(mutex);
 }
