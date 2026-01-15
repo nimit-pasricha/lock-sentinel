@@ -3,7 +3,8 @@
 
 #include <pthread.h>
 
-void init_tables();
+void init_tables(int (*real_lock_fn)(pthread_mutex_t*),
+                 int (*real_unlock_fn)(pthread_mutex_t*));
 
 void lock_graph();
 void unlock_graph();

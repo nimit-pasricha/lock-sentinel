@@ -17,7 +17,6 @@ static pthread_mutex_lock_t real_lock_fn = NULL;
 static pthread_mutex_unlock_t real_unlock_fn = NULL;
 
 __attribute__((constructor)) void init_guard() {
-  init_tables();
 
   // dlsym finds address of requested function. RTLD_NEXT to skip the one in
   // this file and find the next one in library order.
@@ -29,6 +28,8 @@ __attribute__((constructor)) void init_guard() {
     fprintf(stderr,
             "[ERROR] init_guard: Failed to find real pthread functions.\n");
   }
+
+  init_tables(real_lock_fn, real_unlock_fn);
 }
 
 int pthread_mutex_lock(pthread_mutex_t* mutex) {

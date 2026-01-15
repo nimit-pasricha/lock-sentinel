@@ -127,12 +127,17 @@ int contains_cycle(pthread_t curr_thread, pthread_t start_thread, int depth) {
 
 // This will probably give us balls performance. Maybe try reader-writer
 static pthread_mutex_t graph_lock = PTHREAD_MUTEX_INITIALIZER;
+static int (*real_lock)(pthread_mutex_t*) = NULL;
+static int (*real_unlock)(pthread_mutex_t*) = NULL;
 
-void init_tables() {
+void init_tables(int (*real_lock_fn)(pthread_mutex_t*),
+                 int (*real_unlock_fn)(pthread_mutex_t*)) {
+  real_lock = real_lock_fn;
+  real_unlock = real_unlock_fn;
   memset(lock_table, 0, sizeof(lock_table));
   memset(wait_table, 0, sizeof(wait_table));
 }
 
-void lock_graph() { pthread_mutex_lock(&graph_lock); }
+void lock_graph() { real_lock(&graph_lock); }
 
-void unlock_graph() { pthread_mutex_unlock(&graph_lock); }
+void unlock_graph() { real_unlock(&graph_lock); }
