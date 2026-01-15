@@ -4,6 +4,26 @@
 #include <dlfcn.h> // For dlsym() to find the real functions
 #include <pthread.h>
 #include <unistd.h>
+#include <stdlib.h>
+
+#define LOCK_TABLE_SIZE 1024
+
+
+
+// RESOURCE ALLOCATION GRAPH OF LOCKS
+
+typedef struct lock_node
+{
+    pthread_mutex_t *lock_addr; // Key
+    pthread_t owner_thread;     // Value
+    struct lock_node *next;     // Next node in LinkedList
+ } lock_node_t;
+
+static lock_node_t *lock_table[LOCK_TABLE_SIZE];
+
+
+
+// LOCK AND UNLOCK WRAPPERS
 
 typedef int (*pthread_mutex_lock_t)(pthread_mutex_t *);
 typedef int (*pthread_mutex_unlock_t)(pthread_mutex_t *);
@@ -36,7 +56,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
             (unsigned long)pthread_self(), (void *)mutex);
 
     int result = real_lock_fn(mutex);
-    
+
     fprintf(stderr, "[INFO] Thread %lu acquired lock %p\n",
             (unsigned long int)pthread_self(), (void *)mutex);
 
@@ -45,8 +65,8 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
 
 int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
-    fprintf(stderr, "[INFO] Thread %lu releasing lock %p\n", 
-            (unsigned long int)pthread_self(), (void*)mutex);
-    
+    fprintf(stderr, "[INFO] Thread %lu releasing lock %p\n",
+            (unsigned long int)pthread_self(), (void *)mutex);
+
     return real_unlock_fn(mutex);
 }
