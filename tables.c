@@ -29,7 +29,7 @@ void register_lock_owner(pthread_mutex_t* mutex, pthread_t thread_id) {
   lock_table[index] = new_node;
 }
 
-void unregister_lock(pthread_mutex_t* mutex) {
+void unregister_lock_owner(pthread_mutex_t* mutex) {
   unsigned int index = hash_ptr(mutex);
   lock_node_t** current = &lock_table[index];
 
@@ -61,12 +61,24 @@ static unsigned int hash_tid(pthread_t tid) {
 }
 
 void register_thread_waiting_lock(pthread_t thread, pthread_mutex_t* mutex) {
-  unsigned int index = hash_tid(thread);
-
+  unsigned int idx = hash_tid(thread);
   wait_node_t* node = malloc(sizeof(wait_node_t));
   node->thread = thread;
   node->lock = mutex;
+  node->next = wait_table[idx];
+  wait_table[idx] = node;
+}
 
-  node->next = wait_table[index]; // insert at head
-  wait_table[index] = node;
+void unregister_thread_waiting_lock(pthread_t thread) {
+  unsigned int idx = hash_tid(thread);
+  wait_node_t** curr = &wait_table[idx];
+  while (*curr) {
+    wait_node_t* entry = *curr;
+    if (pthread_equal(entry->thread, thread)) {
+      *curr = entry->next;
+      free(entry);
+      return;
+    }
+    curr = &entry->next;
+  }
 }
