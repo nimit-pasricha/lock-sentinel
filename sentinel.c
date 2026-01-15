@@ -1,6 +1,6 @@
-#define _GNU_SOURCE // for RTLD_NEXT
+#define _GNU_SOURCE  // for RTLD_NEXT
 
-#include <dlfcn.h> // For dlsym() to find the real functions
+#include <dlfcn.h>  // For dlsym() to find the real functions
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,67 +10,19 @@
 
 // -------- Resource Allocation Graph of lcoks --------
 
-typedef struct lock_node
-{
-  pthread_mutex_t *lock_addr; // Key
-  pthread_t owner_thread;     // Value
-  struct lock_node *next;     // Next node in collision chain
-} lock_node_t;
-
-static lock_node_t *lock_table[LOCK_TABLE_SIZE];
-
 // TODO: this will probably obliterate performance. Replace with 1 lock per
 // bucket.
 static pthread_mutex_t sentinel_global_lock = PTHREAD_MUTEX_INITIALIZER;
 
-unsigned int hash(pthread_mutex_t *lock_addr)
-{
-  unsigned long addr = (unsigned long)lock_addr;
-  // Addresses usually aliged to 64 bytes so shift by 6 to get rid of useless 0s
-  return (addr >> 6) % LOCK_TABLE_SIZE;
-}
-
-void register_lock(pthread_mutex_t *mutex, pthread_t thread_id)
-{
-  unsigned int index = hash(mutex);
-
-  lock_node_t *new_node = malloc(sizeof(lock_node_t));
-  new_node->lock_addr = mutex;
-  new_node->owner_thread = thread_id;
-
-  new_node->next = lock_table[index];
-  lock_table[index] = new_node;
-}
-
-void unregister_lock(pthread_mutex_t *mutex)
-{
-  unsigned int index = hash(mutex);
-  lock_node_t **current = &lock_table[index];
-
-  // scan this bucket for the lock
-  while (*current)
-  {
-    lock_node_t *entry = *current;
-    if (entry->lock_addr == mutex)
-    {
-      *current = entry->next;
-      free(entry);
-      return;
-    }
-    current = &entry->next;
-  }
-}
-
 // -------- Lock and Unlock Wrappers --------
 
-typedef int (*pthread_mutex_lock_t)(pthread_mutex_t *);
-typedef int (*pthread_mutex_unlock_t)(pthread_mutex_t *);
+typedef int (*pthread_mutex_lock_t)(pthread_mutex_t*);
+typedef int (*pthread_mutex_unlock_t)(pthread_mutex_t*);
 
 static pthread_mutex_lock_t real_lock_fn = NULL;
 static pthread_mutex_unlock_t real_unlock_fn = NULL;
 
-__attribute__((constructor)) void init_guard()
-{
+__attribute__((constructor)) void init_guard() {
   // dlsym finds address of requested function
   // RTLD_NEXT to skip the one in this file and find the next one in library
   // order.
@@ -78,20 +30,17 @@ __attribute__((constructor)) void init_guard()
   real_unlock_fn =
       (pthread_mutex_lock_t)dlsym(RTLD_NEXT, "pthread_mutex_unlock");
 
-  if (!real_lock_fn || !real_unlock_fn)
-  {
+  if (!real_lock_fn || !real_unlock_fn) {
     fprintf(stderr,
             "[ERROR] init_guard: Failed to find real pthread functions.\n");
   }
 }
 
-int pthread_mutex_lock(pthread_mutex_t *mutex)
-{
+int pthread_mutex_lock(pthread_mutex_t* mutex) {
   pthread_t curr_thread_id = pthread_self();
 
   int result = real_lock_fn(mutex);
-  if (result == 0)
-  {
+  if (result == 0) {
     // NOTE: make sure you use the real_ locks otherwise we infinite loop
     real_lock_fn(&sentinel_global_lock);
     register_lock(mutex, curr_thread_id);
@@ -101,8 +50,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
   return result;
 }
 
-int pthread_mutex_unlock(pthread_mutex_t *mutex)
-{
+int pthread_mutex_unlock(pthread_mutex_t* mutex) {
   real_lock_fn(&sentinel_global_lock);
   unregister_lock(mutex);
   real_unlock_fn(&sentinel_global_lock);
