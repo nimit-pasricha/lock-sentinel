@@ -8,22 +8,27 @@
 
 #define LOCK_TABLE_SIZE 1024
 
-
-
-// RESOURCE ALLOCATION GRAPH OF LOCKS
+// -------- Resource Allocation Graph of lcoks --------
 
 typedef struct lock_node
 {
     pthread_mutex_t *lock_addr; // Key
     pthread_t owner_thread;     // Value
-    struct lock_node *next;     // Next node in LinkedList
- } lock_node_t;
+    struct lock_node *next;     // Next node in collision chain
+} lock_node_t;
 
 static lock_node_t *lock_table[LOCK_TABLE_SIZE];
 
+static pthread_mutex_t sentinel_global_lock = PTHREAD_MUTEX_INITIALIZER;
 
+unsigned int hash(pthread_mutex_t *lock_addr)
+{
+    unsigned long addr = (unsigned long)lock_addr;
+    // Addresses usually aliged to 64 bytes so shift by 6 to get rid of useless 0s
+    return (addr >> 6) % LOCK_TABLE_SIZE;
+}
 
-// LOCK AND UNLOCK WRAPPERS
+// -------- Lock and Unlock Wrappers --------
 
 typedef int (*pthread_mutex_lock_t)(pthread_mutex_t *);
 typedef int (*pthread_mutex_unlock_t)(pthread_mutex_t *);
