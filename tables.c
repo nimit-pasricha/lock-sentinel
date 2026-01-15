@@ -7,11 +7,11 @@
 // This will probably give us balls performance. Maybe try reader-writer
 static pthread_mutex_t graph_lock = PTHREAD_MUTEX_INITIALIZER;
 
-void tables_lock_graph() {
+void lock_graph() {
     pthread_mutex_lock(&graph_lock);
 }
 
-void tables_unlock_graph() {
+void unlock_graph() {
     pthread_mutex_unlock(&graph_lock);
 }
 
