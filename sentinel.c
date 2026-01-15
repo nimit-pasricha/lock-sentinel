@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "tables.h"
+#include "graph.h"
 
 #define LOCK_TABLE_SIZE 1024
 
