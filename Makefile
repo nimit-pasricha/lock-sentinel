@@ -9,8 +9,8 @@ LDFLAGS = -ldl
 # changed name cuz libguard is already a thing
 all: libsentinel.so deadlock
 
-libsentinel.so: sentinel.c
-	$(CC) $(CFLAGS) sentinel.c -o libsentinel.so $(LDFLAGS)
+libsentinel.so: sentinel.c tables.h tables.c
+	$(CC) $(CFLAGS) sentinel.c tables.c -o libsentinel.so $(LDFLAGS)
 
 deadlock: deadlock.c
 	$(CC) deadlock.c -o deadlock

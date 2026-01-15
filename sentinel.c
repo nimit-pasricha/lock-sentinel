@@ -5,20 +5,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "tables.h"
 
 #define LOCK_TABLE_SIZE 1024
-
-// -------- Resource Allocation Graph of lcoks --------
 
 // TODO: this will probably obliterate performance. Replace with 1 lock per
 // bucket.
 static pthread_mutex_t sentinel_global_lock = PTHREAD_MUTEX_INITIALIZER;
 
-// -------- Lock and Unlock Wrappers --------
-
 typedef int (*pthread_mutex_lock_t)(pthread_mutex_t*);
 typedef int (*pthread_mutex_unlock_t)(pthread_mutex_t*);
-
 static pthread_mutex_lock_t real_lock_fn = NULL;
 static pthread_mutex_unlock_t real_unlock_fn = NULL;
 
@@ -43,7 +39,7 @@ int pthread_mutex_lock(pthread_mutex_t* mutex) {
   if (result == 0) {
     // NOTE: make sure you use the real_ locks otherwise we infinite loop
     real_lock_fn(&sentinel_global_lock);
-    register_lock(mutex, curr_thread_id);
+    register_lock_owner(mutex, curr_thread_id);
     real_unlock_fn(&sentinel_global_lock);
   }
 
@@ -52,7 +48,7 @@ int pthread_mutex_lock(pthread_mutex_t* mutex) {
 
 int pthread_mutex_unlock(pthread_mutex_t* mutex) {
   real_lock_fn(&sentinel_global_lock);
-  unregister_lock(mutex);
+  unregister_lock_owner(mutex);
   real_unlock_fn(&sentinel_global_lock);
   return real_unlock_fn(mutex);
 }

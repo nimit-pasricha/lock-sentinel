@@ -39,7 +39,7 @@ void unregister_lock_owner(pthread_mutex_t* mutex) {
   }
 }
 
-void get_lock_owner(pthread_mutex_t* mutex) {
+pthread_t get_lock_owner(pthread_mutex_t* mutex) {
   unsigned int index = hash_ptr(mutex);
   lock_node_t* curr = lock_table[index];
   while (curr) {
@@ -82,7 +82,7 @@ void unregister_thread_waiting_lock(pthread_t thread) {
   }
 }
 
-pthread_mutex_t* get_lock_waiting_for(pthread_t thread) {
+pthread_mutex_t* get_awaited_lock(pthread_t thread) {
   unsigned int index = hash_tid(thread);
   wait_node_t* curr = wait_table[index];
   while (curr) {
