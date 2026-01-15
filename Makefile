@@ -7,10 +7,13 @@ CFLAGS = -Wall -fPIC -shared
 LDFLAGS = -ldl
 
 # changed name cuz libguard is already a thing
-all: libsentinel.so
+all: libsentinel.so deadlock
 
 libsentinel.so: sentinel.c
-	$(CC) $(CFLAGS) -o libsentinel.so sentinel.c $(LDFLAGS)
+	$(CC) $(CFLAGS) sentinel.c -o libsentinel.so $(LDFLAGS)
+
+deadlock: deadlock.c
+	$(CC) deadlock.c -o deadlock
 
 clean:
-	rm -f libsentinel.so
+	rm -f libsentinel.so deadlock

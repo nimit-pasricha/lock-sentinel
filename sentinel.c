@@ -28,7 +28,7 @@ __attribute__((constructor)) void init_guard()
     }
 }
 
-// TODO: write wrappers
+// TODO: write wrapers
 int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
     // stderr because unbuffered
