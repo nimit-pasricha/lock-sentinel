@@ -1,10 +1,12 @@
 #define _GNU_SOURCE  // for RTLD_NEXT
 
 #include <dlfcn.h>  // For dlsym() to find the real functions
+#include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 #include "tables.h"
 
 #define LOCK_TABLE_SIZE 1024
@@ -31,13 +33,40 @@ __attribute__((constructor)) void init_guard() {
 int pthread_mutex_lock(pthread_mutex_t* mutex) {
   pthread_t self = pthread_self();
 
-  int result = real_lock_fn(mutex);
-  if (result == 0) {
-    // NOTE: make sure you use the real_ locks otherwise we infinite loop
-    lock_graph();
-    register_lock_owner(mutex, self);
-    unlock_graph();
+  lock_graph();
+  pthread_t existing_owner = get_lock_owner(mutex);
+
+  if (existing_owner != 0) {
+    if (pthread_equal(existing_owner, self)) {
+      fprintf(stderr, "[ERROR] pthread_mutex_lock: Recursive locking on %p\n",
+              (void*)mutex);
+      unlock_graph();
+      return EDEADLK;
+    }
+
+    if (contains_cycle(existing_owner, self, 0) == 1) {
+      // TODO: Log the cycle for debugging, and do different thing than just deny lock
+      fprintf(stderr,
+              "[INFO] DEADLOCK PREVENTED: Thread %lu -> Lock %p\n",
+              (unsigned long)self, (void*)mutex);
+
+      unlock_graph();
+      return EDEADLK;
+    }
   }
+
+  register_thread_waiting_lock(self, mutex);
+  unlock_graph();
+
+  int result = real_lock_fn(mutex);
+
+  lock_graph();
+  unregister_thread_waiting_lock(self);
+  if (result == 0) {
+    register_lock_owner(mutex, self);
+  }
+
+  unlock_graph();
 
   return result;
 }
