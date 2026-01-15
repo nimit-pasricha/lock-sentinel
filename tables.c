@@ -1,21 +1,10 @@
 #include "tables.h"
 
 #include <stdlib.h>
+#include <string.h>  // For memset
 
 #define TABLE_SIZE 1024
 #define MAX_DEPTH 64
-
-
-// This will probably give us balls performance. Maybe try reader-writer
-static pthread_mutex_t graph_lock = PTHREAD_MUTEX_INITIALIZER;
-
-void lock_graph() {
-    pthread_mutex_lock(&graph_lock);
-}
-
-void unlock_graph() {
-    pthread_mutex_unlock(&graph_lock);
-}
 
 // -------- Lock owned by Thread HashTable --------
 
@@ -108,15 +97,16 @@ pthread_mutex_t* get_awaited_lock(pthread_t thread) {
 }
 
 // -------- Check for cycle in graph --------
+
 /**
  * @return 0 if doesn't contain cycle, 1 if contains cycle
  */
 int contains_cycle(pthread_t curr_thread, pthread_t start_thread, int depth) {
   if (depth > MAX_DEPTH) {
-    return 0; // Graph too deep, give up, assume no cycle
+    return 0;  // Graph too deep, give up, assume no cycle
   }
 
-  pthread_mutex_t *wanted_lock = get_awaited_lock(curr_thread);
+  pthread_mutex_t* wanted_lock = get_awaited_lock(curr_thread);
   if (wanted_lock == NULL) {
     return 0;
   }
@@ -132,3 +122,17 @@ int contains_cycle(pthread_t curr_thread, pthread_t start_thread, int depth) {
 
   return contains_cycle(owner, start_thread, depth + 1);
 }
+
+// -------- MAIN --------
+
+// This will probably give us balls performance. Maybe try reader-writer
+static pthread_mutex_t graph_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void init_tables() {
+  memset(lock_table, 0, sizeof(lock_table));
+  memset(wait_table, 0, sizeof(wait_table));
+}
+
+void lock_graph() { pthread_mutex_lock(&graph_lock); }
+
+void unlock_graph() { pthread_mutex_unlock(&graph_lock); }

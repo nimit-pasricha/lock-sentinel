@@ -17,9 +17,10 @@ static pthread_mutex_lock_t real_lock_fn = NULL;
 static pthread_mutex_unlock_t real_unlock_fn = NULL;
 
 __attribute__((constructor)) void init_guard() {
-  // dlsym finds address of requested function
-  // RTLD_NEXT to skip the one in this file and find the next one in library
-  // order.
+  init_tables();
+
+  // dlsym finds address of requested function. RTLD_NEXT to skip the one in
+  // this file and find the next one in library order.
   real_lock_fn = (pthread_mutex_lock_t)dlsym(RTLD_NEXT, "pthread_mutex_lock");
   real_unlock_fn =
       (pthread_mutex_lock_t)dlsym(RTLD_NEXT, "pthread_mutex_unlock");
@@ -45,9 +46,9 @@ int pthread_mutex_lock(pthread_mutex_t* mutex) {
     }
 
     if (contains_cycle(existing_owner, self, 0) == 1) {
-      // TODO: Log the cycle for debugging, and do different thing than just deny lock
-      fprintf(stderr,
-              "[INFO] DEADLOCK PREVENTED: Thread %lu -> Lock %p\n",
+      // TODO: Log the cycle for debugging, and do different thing than just
+      // deny lock
+      fprintf(stderr, "[INFO] DEADLOCK PREVENTED: Thread %lu -> Lock %p\n",
               (unsigned long)self, (void*)mutex);
 
       unlock_graph();

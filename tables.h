@@ -3,6 +3,8 @@
 
 #include <pthread.h>
 
+void init_tables();
+
 void lock_graph();
 void unlock_graph();
 
