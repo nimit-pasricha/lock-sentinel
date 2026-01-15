@@ -2,8 +2,8 @@
  * Simple test program that is guaranteed to deadlock
  */
 
-#include <stdio.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <unistd.h> // For sleep()
 
 pthread_mutex_t lock_A = PTHREAD_MUTEX_INITIALIZER;
