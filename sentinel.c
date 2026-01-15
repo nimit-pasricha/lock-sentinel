@@ -40,6 +40,25 @@ void register_lock(pthread_mutex_t *mutex, pthread_t thread_id)
     lock_table[index] = new_node;
 }
 
+void unregister_lock(pthread_mutex_t *mutex)
+{
+    unsigned int index = hash(mutex);
+    lock_node_t **current = &lock_table[index];
+
+    // scan this bucket for the lock
+    while (*current)
+    {
+        lock_node_t *entry = *current;
+        if (entry->lock_addr == mutex)
+        {
+            *current = entry->next;
+            free(entry);
+            return;
+        }
+        current = &entry->next;
+    }
+}
+
 // -------- Lock and Unlock Wrappers --------
 
 typedef int (*pthread_mutex_lock_t)(pthread_mutex_t *);
