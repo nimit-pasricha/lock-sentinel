@@ -84,7 +84,6 @@ __attribute__((constructor)) void init_guard()
     }
 }
 
-// TODO: write wrapers
 int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
     pthread_t curr_thread_id = pthread_self();
@@ -103,7 +102,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
 
 int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
-    real_lock(&sentinel_global_lock);
+    real_lock_fn(&sentinel_global_lock);
     unregister_lock(mutex);
     real_unlock_fn(&sentinel_global_lock);
     return real_unlock_fn(mutex);
