@@ -29,13 +29,13 @@ __attribute__((constructor)) void init_guard() {
 }
 
 int pthread_mutex_lock(pthread_mutex_t* mutex) {
-  pthread_t curr_thread_id = pthread_self();
+  pthread_t self = pthread_self();
 
   int result = real_lock_fn(mutex);
   if (result == 0) {
     // NOTE: make sure you use the real_ locks otherwise we infinite loop
     lock_graph();
-    register_lock_owner(mutex, curr_thread_id);
+    register_lock_owner(mutex, self);
     unlock_graph();
   }
 

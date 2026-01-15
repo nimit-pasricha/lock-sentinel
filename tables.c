@@ -3,6 +3,8 @@
 #include <stdlib.h>
 
 #define TABLE_SIZE 1024
+#define MAX_DEPTH 64
+
 
 // This will probably give us balls performance. Maybe try reader-writer
 static pthread_mutex_t graph_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -103,4 +105,30 @@ pthread_mutex_t* get_awaited_lock(pthread_t thread) {
     curr = curr->next;
   }
   return NULL;  // Not waiting
+}
+
+// -------- Check for cycle in graph --------
+/**
+ * @return 0 if doesn't contain cycle, 1 if contains cycle
+ */
+int contains_cycle(pthread_t curr_thread, pthread_t start_thread, int depth) {
+  if (depth > MAX_DEPTH) {
+    return 0; // Graph too deep, give up, assume no cycle
+  }
+
+  pthread_mutex_t *wanted_lock = get_awaited_lock(curr_thread);
+  if (wanted_lock == NULL) {
+    return 0;
+  }
+
+  pthread_t owner = get_lock_owner(wanted_lock);
+  if (owner == 0) {
+    return 0;
+  }
+
+  if (pthread_equal(owner, start_thread)) {
+    return 1;
+  }
+
+  return contains_cycle(owner, start_thread, depth + 1);
 }

@@ -29,4 +29,6 @@ void register_thread_waiting_lock(pthread_t thread, pthread_mutex_t* mutex);
 void unregister_thread_waiting_lock(pthread_t thread);
 pthread_mutex_t* get_awaited_lock(pthread_t thread);
 
+int contains_cycle(pthread_t curr_thread, pthread_t start_thread, int depth);
+
 #endif
