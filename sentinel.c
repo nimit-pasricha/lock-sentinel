@@ -28,6 +28,18 @@ unsigned int hash(pthread_mutex_t *lock_addr)
     return (addr >> 6) % LOCK_TABLE_SIZE;
 }
 
+void register_lock(pthread_mutex_t *mutex, pthread_t thread_id)
+{
+    unsigned int index = hash(mutex);
+
+    lock_node_t *new_node = malloc(sizeof(lock_node_t));
+    new_node->lock_addr = mutex;
+    new_node->owner_thread = thread_id;
+
+    new_node->next = lock_table[index];
+    lock_table[index] = new_node;
+}
+
 // -------- Lock and Unlock Wrappers --------
 
 typedef int (*pthread_mutex_lock_t)(pthread_mutex_t *);
