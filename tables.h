@@ -3,19 +3,27 @@
 
 #include <pthread.h>
 
-// Initialize both hash tables (call this once)
-void init_tables();
+typedef struct lock_node {
+  pthread_mutex_t* lock_addr;  // Key
+  pthread_t owner_thread;      // Value
+  struct lock_node* next;      // Next node in collision chain
+} lock_node_t;
 
-// --- LOCK REGISTRY (Who owns this lock?) ---
-// Maps: pthread_mutex_t* -> pthread_t
-void table_map_lock(pthread_mutex_t *lock, pthread_t owner);
-void table_unmap_lock(pthread_mutex_t *lock);
-pthread_t table_get_owner(pthread_mutex_t *lock);
+// Node for Thread->Waiting_for map
+typedef struct wait_node {
+  pthread_t thread;        // Key
+  pthread_mutex_t* lock;   // Value
+  struct wait_node* next;  // Next node in collision chain
+} wait_node_t;
 
-// --- WAIT REGISTRY (Who is this thread waiting for?) ---
-// Maps: pthread_t -> pthread_mutex_t*
-void table_map_wait(pthread_t thread, pthread_mutex_t *lock);
-void table_unmap_wait(pthread_t thread);
-pthread_mutex_t* table_get_wait(pthread_t thread);
+// Hashtable for what thread is holding what lock.
+void register_lock_owner(pthread_mutex_t* mutex, pthread_t thread_id);
+void unregister_lock_owner(pthread_mutex_t* mutex);
+void get_lock_owner(pthread_mutex_t* mutex);
+
+// Hashtable of what lock is being waited for by what thread
+void register_thread_waiting_lock(pthread_t thread, pthread_mutex_t* mutex);
+void unregister_thread_waiting_lock(pthread_t thread);
+pthread_mutex_t* get_lock_waiting_for(pthread_t thread);
 
 #endif

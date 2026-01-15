@@ -6,12 +6,6 @@
 
 // -------- Lock owned by Thread HashTable --------
 
-typedef struct lock_node {
-  pthread_mutex_t* lock_addr;  // Key
-  pthread_t owner_thread;      // Value
-  struct lock_node* next;      // Next node in collision chain
-} lock_node_t;
-
 static lock_node_t* lock_table[TABLE_SIZE];
 
 static unsigned int hash_ptr(void* ptr) {
@@ -45,14 +39,19 @@ void unregister_lock_owner(pthread_mutex_t* mutex) {
   }
 }
 
-// -------- Thread waiting for Lock HashTable --------
+void get_lock_owner(pthread_mutex_t* mutex) {
+  unsigned int index = hash_ptr(mutex);
+  lock_node_t* curr = lock_table[index];
+  while (curr) {
+    if (curr->lock_addr == mutex) {
+      return curr->owner_thread;
+    }
+    curr = curr->next;
+  }
+  return 0;  // Not found
+}
 
-// Node for Thread->Waiting_for map
-typedef struct wait_node {
-  pthread_t thread;        // Key
-  pthread_mutex_t* lock;   // Value
-  struct wait_node* next;  // Next node in collision chain
-} wait_node_t;
+// -------- Thread waiting for Lock HashTable --------
 
 static wait_node_t* wait_table[TABLE_SIZE];
 
@@ -81,4 +80,16 @@ void unregister_thread_waiting_lock(pthread_t thread) {
     }
     curr = &entry->next;
   }
+}
+
+pthread_mutex_t* get_lock_waiting_for(pthread_t thread) {
+  unsigned int index = hash_tid(thread);
+  wait_node_t* curr = wait_table[index];
+  while (curr) {
+    if (pthread_equal(curr->thread, thread)) {
+      return curr->lock;
+    }
+    curr = curr->next;
+  }
+  return NULL;  // Not waiting
 }
