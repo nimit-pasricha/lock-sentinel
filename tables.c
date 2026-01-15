@@ -59,3 +59,14 @@ static wait_node_t* wait_table[TABLE_SIZE];
 static unsigned int hash_tid(pthread_t tid) {
   return ((unsigned long)tid) % TABLE_SIZE;
 }
+
+void register_thread_waiting_lock(pthread_t thread, pthread_mutex_t* mutex) {
+  unsigned int index = hash_tid(thread);
+
+  wait_node_t* node = malloc(sizeof(wait_node_t));
+  node->thread = thread;
+  node->lock = mutex;
+
+  node->next = wait_table[index]; // insert at head
+  wait_table[index] = node;
+}
