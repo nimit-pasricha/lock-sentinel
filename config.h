@@ -3,7 +3,7 @@
 
 typedef enum {
     RETURN, // Don't lock. Return EDEADLK
-    FREEZE, // Report the deadlock, and let it happen
+    FREEZE, // Default. Report the deadlock, and let it happen
     STALL   // If deadlock about to occur, put called thread to sleep until safe
     // TODO: priority based reordering
 } sentinel_policy_t;
