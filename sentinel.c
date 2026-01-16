@@ -11,6 +11,8 @@
 
 #define LOCK_TABLE_SIZE 1024
 
+// TODO: don't clutter output. Replace all prints with file logs
+
 typedef int (*pthread_mutex_lock_t)(pthread_mutex_t *);
 
 typedef int (*pthread_mutex_unlock_t)(pthread_mutex_t *);
@@ -51,7 +53,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
         if (contains_cycle(existing_owner, self, 0) == 1) {
             // TODO: Log the cycle for debugging
             if (global_config.policy == FREEZE) {
-                fprintf(stderr, "[INFO] Allowing deadlock to occur.");
+                fprintf(stderr, "[INFO] Allowing deadlock to occur.\n");
                 unlock_graph();
                 return real_lock(mutex);
             }

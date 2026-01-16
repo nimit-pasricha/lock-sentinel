@@ -15,7 +15,7 @@ typedef struct {
 
 extern sentinel_config_t global_config;
 
-// load settings from sentinel.conf
+// load settings from sentinel.ini
 void load_config();
 
 #endif
