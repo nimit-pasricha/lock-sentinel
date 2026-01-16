@@ -16,21 +16,21 @@ typedef int (*pthread_mutex_lock_t)(pthread_mutex_t *);
 typedef int (*pthread_mutex_unlock_t)(pthread_mutex_t *);
 
 static pthread_mutex_lock_t real_lock = nullptr;
-static pthread_mutex_unlock_t real_unlock_fn = nullptr;
+static pthread_mutex_unlock_t real_unlock = nullptr;
 
 __attribute__((constructor)) void init_guard() {
     // dlsym finds address of requested function. RTLD_NEXT to skip the one in
     // this file and find the next one in library order.
     real_lock = (pthread_mutex_lock_t) dlsym(RTLD_NEXT, "pthread_mutex_lock");
-    real_unlock_fn =
+    real_unlock =
             (pthread_mutex_lock_t) dlsym(RTLD_NEXT, "pthread_mutex_unlock");
 
-    if (!real_lock || !real_unlock_fn) {
+    if (!real_lock || !real_unlock) {
         fprintf(stderr,
                 "[ERROR] init_guard: Failed to find real pthread functions.\n");
     }
 
-    init_tables(real_lock, real_unlock_fn);
+    init_tables(real_lock, real_unlock);
     load_config();
 }
 
@@ -49,10 +49,12 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
         }
 
         if (contains_cycle(existing_owner, self, 0) == 1) {
-            // TODO: Log the cycle for debugging, and do different thing than just
-            // deny lock
-            fprintf(stderr, "[INFO] DEADLOCK PREVENTED: Thread %lu -> Lock %p\n",
-                    (unsigned long) self, (void *) mutex);
+            // TODO: Log the cycle for debugging
+            if (global_config.policy == FREEZE) {
+                fprintf(stderr, "[INFO] Allowing deadlock to occur.");
+                unlock_graph();
+                return real_lock(mutex);
+            }
 
             unlock_graph();
             return EDEADLK;
@@ -79,5 +81,5 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
     lock_graph();
     unregister_lock_owner(mutex);
     unlock_graph();
-    return real_unlock_fn(mutex);
+    return real_unlock(mutex);
 }
