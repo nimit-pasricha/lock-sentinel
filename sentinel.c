@@ -29,7 +29,8 @@ __attribute__((constructor)) void init_guard() {
 
     if (!real_lock || !real_unlock) {
         fprintf(stderr,
-                "[ERROR] init_guard: Failed to find real pthread functions.\n");
+                "[FATAL] init_guard: Failed to find real pthread functions.\n");
+        exit(1);
     }
 
     init_tables(real_lock, real_unlock);
