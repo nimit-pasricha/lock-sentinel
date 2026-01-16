@@ -1,5 +1,5 @@
-#ifndef TABLES_H
-#define TABLES_H
+#ifndef GRAPH_H
+#define GRAPH_H
 
 #include <pthread.h>
 
