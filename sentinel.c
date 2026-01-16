@@ -54,10 +54,10 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
                 fprintf(stderr, "[INFO] Allowing deadlock to occur.");
                 unlock_graph();
                 return real_lock(mutex);
-            } else {
-                unlock_graph();
-                return EDEADLK;
             }
+
+            unlock_graph();
+            return EDEADLK;
         }
     }
 
