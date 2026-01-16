@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include "graph.h"
+#include "config.h"
 
 #define LOCK_TABLE_SIZE 1024
 
@@ -30,6 +31,7 @@ __attribute__((constructor)) void init_guard() {
     }
 
     init_tables(real_lock, real_unlock_fn);
+    load_config();
 }
 
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
