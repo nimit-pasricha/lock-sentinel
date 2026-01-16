@@ -41,27 +41,51 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
     pthread_t self = pthread_self();
 
     lock_graph();
-    pthread_t existing_owner = get_lock_owner(mutex);
 
-    if (existing_owner != 0) {
+
+    while (1) {
+        pthread_t existing_owner = get_lock_owner(mutex);
+        if (existing_owner == 0) {
+            break;
+        }
+
         if (pthread_equal(existing_owner, self)) {
-            fprintf(stderr, "[ERROR] pthread_mutex_lock: Recursive locking on %p\n",
-                    (void *) mutex);
             unlock_graph();
             return EDEADLK;
         }
 
         if (contains_cycle(existing_owner, self, 0) == 1) {
             // TODO: Log the cycle for debugging
+            if (global_config.policy == WAIT_DIE) {
+                // Heuristic: smaller thread_id = older = higher priority
+                if ((unsigned long) self < (unsigned long) existing_owner) {
+                    // Older so priority
+                    fprintf(stderr, "[INFO] Deadlock. Thread %lu waiting for %lu to retreat...\n",
+                            (unsigned long) self, (unsigned long) existing_owner);
+                    wait_for_graph_change();
+                    continue; // Check again
+                }
+                // Younger so die
+                fprintf(stderr, "[INFO] Deadlock! Thread %lu retreating to break cycle.\n",
+                        (unsigned long) self);
+                unlock_graph();
+                return EDEADLK;
+            }
+
             if (global_config.policy == FREEZE) {
-                fprintf(stderr, "[INFO] pthread_mutex_lock: Allowing deadlock to occur.\n");
+                fprintf(stderr, "[INFO] Allowing deadlock to occur.\n");
                 unlock_graph();
                 return real_lock(mutex);
             }
 
+            // RETURN policy
+            fprintf(stderr, "[INFO] Deadlock. Aborting to save...\n");
             unlock_graph();
             return EDEADLK;
         }
+
+        // reaching here means there is no cycle
+        break;
     }
 
     register_thread_waiting_lock(self, mutex);
