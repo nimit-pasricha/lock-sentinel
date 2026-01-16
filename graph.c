@@ -215,7 +215,7 @@ void generate_graph(pthread_t current_thread, pthread_mutex_t *wanted_lock)
         lock_node_t *curr = lock_table[i];
         while (curr)
         {
-            fprintf(f, "  \"L_%p\" [label=\"Lock %p\", shape=box, style=filled, fillcolor=lightblue];\n",
+            fprintf(f, "  \"L_%p\" [label=\"Lock at %p\", shape=box, style=filled, fillcolor=lightblue];\n",
                     (void *)curr->lock_addr, (void *)curr->lock_addr);
 
             fprintf(f, "  \"L_%p\" -> \"T_%lu\" [label=\"held by\", color=black];\n",
@@ -235,24 +235,45 @@ void generate_graph(pthread_t current_thread, pthread_mutex_t *wanted_lock)
                     (unsigned long)curr->thread, (unsigned long)curr->thread);
 
             // Edge: Thread -> Lock (Waiting)
-            fprintf(f, "  \"T_%lu\" -> \"L_%p\" [label=\"waits for\", color=red, penwidth=2.0];\n",
+            fprintf(f, "  \"T_%lu\" -> \"L_%p\" [label=\"waits for\"];\n",
                     (unsigned long)curr->thread, (void *)curr->lock);
 
             curr = curr->next;
         }
     }
 
+    // Draw the last 'threading waiting for lock' (the one that caused the deadlock)
     if (current_thread != 0 && wanted_lock != NULL) {
-        // Ensure the thread node exists (it might not be in wait_table yet)
-        fprintf(f, "  \"T_%lu\" [label=\"Thread %lu (You)\", shape=doubleoctagon, style=filled, fillcolor=salmon];\n", 
+        fprintf(f, "  \"T_%lu\" [label=\"Thread %lu\", shape=doubleoctagon, style=filled, fillcolor=salmon];\n", 
                 (unsigned long)current_thread, (unsigned long)current_thread);
 
-        // Draw the fatal edge in RED and BOLD
-        fprintf(f, "  \"T_%lu\" -> \"L_%p\" [label=\"CAUSES DEADLOCK\", color=red, penwidth=3.0, style=dashed];\n",
+        fprintf(f, "  \"T_%lu\" -> \"L_%p\" [label=\"CAUSES DEADLOCK\", color=red, penwidth=2.0];\n",
                 (unsigned long)current_thread, (void*)wanted_lock);
     }
 
     fprintf(f, "}\n");
     fclose(f);
 
+    char command[512];
+    char png_path[256];
+
+    // Replace .dot with .png
+    strcpy(png_path, global_config.graph_file_path);
+    char *dot_ext = strrchr(png_path, '.');
+    if (dot_ext) {
+        strcpy(dot_ext, ".png"); // graph.dot -> graph.png
+    } else {
+        strcat(png_path, ".png"); // graph -> graph.png
+    }
+
+    // Construct command: "dot -Tpng input.dot -o output.png"
+    snprintf(command, sizeof(command), "dot -Tpng %s -o %s", 
+             global_config.graph_file_path, png_path);
+
+    int result = system(command);
+    
+    if (result != 0) {
+        fprintf(stderr, "[WARNING] Failed to run 'dot'. Install 'graphviz' with your package manager.\n");
+        fprintf(stderr, "           (Eg: sudo apt install graphviz)\n");
+    }
 }

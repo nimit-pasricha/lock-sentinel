@@ -1,6 +1,8 @@
 # Custom
 deadlock
 .idea/
+*.dot
+*.png
 
 # Prerequisites
 *.d

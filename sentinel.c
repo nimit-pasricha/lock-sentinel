@@ -81,7 +81,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
             {
                 fprintf(stderr, "[INFO] Allowing deadlock to occur.\n");
                 // This is slow so only generating if we're doomed to deadlock anyways.
-                generate_graph(); 
+                generate_graph(self, mutex); 
                 unlock_graph();
                 return real_lock(mutex);
             }
