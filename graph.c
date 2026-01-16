@@ -123,14 +123,16 @@ int contains_cycle(pthread_t curr_thread, pthread_t start_thread, int depth) {
     return contains_cycle(owner, start_thread, depth + 1);
 }
 
-// -------- MAIN --------
+
+// -------- GRAPH INIT --------
 
 // This will probably give us balls performance. Maybe try reader-writer
 static pthread_mutex_t graph_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t wait_for_young;
 
-static int (*real_lock)(pthread_mutex_t *) = NULL;
+static int (*real_lock)(pthread_mutex_t *) = nullptr;
 
-static int (*real_unlock)(pthread_mutex_t *) = NULL;
+static int (*real_unlock)(pthread_mutex_t *) = nullptr;
 
 void init_tables(int (*real_lock_fn)(pthread_mutex_t *),
                  int (*real_unlock_fn)(pthread_mutex_t *)) {
@@ -138,8 +140,24 @@ void init_tables(int (*real_lock_fn)(pthread_mutex_t *),
     real_unlock = real_unlock_fn;
     memset(lock_table, 0, sizeof(lock_table));
     memset(wait_table, 0, sizeof(wait_table));
+    pthread_cond_init(&wait_for_young, nullptr);
 }
 
-void lock_graph() { real_lock(&graph_lock); }
+void lock_graph() {
+    real_lock(&graph_lock);
+}
 
-void unlock_graph() { real_unlock(&graph_lock); }
+void unlock_graph() {
+    real_unlock(&graph_lock);
+}
+
+void wait_for_graph_change() {
+    // Unlocks graph_lock, sleeps, re-locks on wake
+    pthread_cond_wait(&wait_for_young, &graph_lock);
+}
+
+void signal_graph_change() {
+    // Wake up threads waiting for a lock release
+    pthread_cond_broadcast(&wait_for_young);
+}
+

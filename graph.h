@@ -7,8 +7,10 @@ void init_tables(int (*real_lock_fn)(pthread_mutex_t *),
                  int (*real_unlock_fn)(pthread_mutex_t *));
 
 void lock_graph();
-
 void unlock_graph();
+
+void signal_graph_change();
+void wait_for_graph_change();
 
 typedef struct lock_node {
     pthread_mutex_t *lock_addr; // Key
