@@ -10,7 +10,7 @@ LDFLAGS = -ldl
 all: libsentinel.so deadlock
 
 libsentinel.so: sentinel.c graph.h graph.c config.h config.c
-	$(CC) $(CFLAGS) sentinel.c graph.c -o libsentinel.so $(LDFLAGS)
+	$(CC) $(CFLAGS) sentinel.c graph.c config.c -o libsentinel.so $(LDFLAGS)
 
 deadlock: deadlock.c
 	$(CC) deadlock.c -o deadlock
