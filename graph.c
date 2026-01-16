@@ -189,7 +189,7 @@ void signal_graph_change()
     pthread_cond_broadcast(&wait_for_young);
 }
 
-void generate_graph()
+void generate_graph(pthread_t current_thread, pthread_mutex_t *wanted_lock)
 {
     // If no path is set in config, don't generate anything
     if (global_config.graph_file_path[0] == '\0')
@@ -242,6 +242,17 @@ void generate_graph()
         }
     }
 
+    if (current_thread != 0 && wanted_lock != NULL) {
+        // Ensure the thread node exists (it might not be in wait_table yet)
+        fprintf(f, "  \"T_%lu\" [label=\"Thread %lu (You)\", shape=doubleoctagon, style=filled, fillcolor=salmon];\n", 
+                (unsigned long)current_thread, (unsigned long)current_thread);
+
+        // Draw the fatal edge in RED and BOLD
+        fprintf(f, "  \"T_%lu\" -> \"L_%p\" [label=\"CAUSES DEADLOCK\", color=red, penwidth=3.0, style=dashed];\n",
+                (unsigned long)current_thread, (void*)wanted_lock);
+    }
+
     fprintf(f, "}\n");
     fclose(f);
+
 }

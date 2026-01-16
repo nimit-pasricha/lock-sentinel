@@ -12,7 +12,7 @@ void unlock_graph();
 void signal_graph_change();
 void wait_for_graph_change();
 
-void generate_graph();
+void generate_graph(pthread_t current_thread, pthread_mutex_t *wanted_lock);
 
 typedef struct lock_node
 {
