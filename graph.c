@@ -130,9 +130,9 @@ int contains_cycle(pthread_t curr_thread, pthread_t start_thread, int depth) {
 static pthread_mutex_t graph_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t wait_for_young;
 
-static int (*real_lock)(pthread_mutex_t *) = nullptr;
+static int (*real_lock)(pthread_mutex_t *) = NULL;
 
-static int (*real_unlock)(pthread_mutex_t *) = nullptr;
+static int (*real_unlock)(pthread_mutex_t *) = NULL;
 
 void init_tables(int (*real_lock_fn)(pthread_mutex_t *),
                  int (*real_unlock_fn)(pthread_mutex_t *)) {
@@ -140,7 +140,7 @@ void init_tables(int (*real_lock_fn)(pthread_mutex_t *),
     real_unlock = real_unlock_fn;
     memset(lock_table, 0, sizeof(lock_table));
     memset(wait_table, 0, sizeof(wait_table));
-    pthread_cond_init(&wait_for_young, nullptr);
+    pthread_cond_init(&wait_for_young, NULL);
 }
 
 void lock_graph() {

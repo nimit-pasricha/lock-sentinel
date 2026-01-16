@@ -17,8 +17,8 @@ typedef int (*pthread_mutex_lock_t)(pthread_mutex_t *);
 
 typedef int (*pthread_mutex_unlock_t)(pthread_mutex_t *);
 
-static pthread_mutex_lock_t real_lock = nullptr;
-static pthread_mutex_unlock_t real_unlock = nullptr;
+static pthread_mutex_lock_t real_lock = NULL;
+static pthread_mutex_unlock_t real_unlock = NULL;
 
 __attribute__((constructor)) void init_guard() {
     // dlsym finds address of requested function. RTLD_NEXT to skip the one in

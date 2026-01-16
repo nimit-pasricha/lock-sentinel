@@ -12,6 +12,8 @@ void unlock_graph();
 void signal_graph_change();
 void wait_for_graph_change();
 
+void print_graph();
+
 typedef struct lock_node {
     pthread_mutex_t *lock_addr; // Key
     pthread_t owner_thread; // Value
