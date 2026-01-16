@@ -7,6 +7,8 @@
 #define TABLE_SIZE 1024
 #define MAX_DEPTH 64
 
+// TODO: convert dot to png
+
 // -------- Lock owned by Thread HashTable --------
 
 static lock_node_t *lock_table[TABLE_SIZE];

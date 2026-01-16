@@ -11,8 +11,6 @@
 
 #define LOCK_TABLE_SIZE 1024
 
-// TODO: don't clutter output. Replace all prints with file logs
-
 typedef int (*pthread_mutex_lock_t)(pthread_mutex_t *);
 
 typedef int (*pthread_mutex_unlock_t)(pthread_mutex_t *);
@@ -61,7 +59,6 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
 
         if (contains_cycle(existing_owner, self, 0) == 1)
         {
-            // TODO: Log the cycle for debugging
             if (global_config.policy == WAIT_DIE)
             {
                 // Heuristic: smaller thread_id = older = higher priority
