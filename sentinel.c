@@ -53,7 +53,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
         if (contains_cycle(existing_owner, self, 0) == 1) {
             // TODO: Log the cycle for debugging
             if (global_config.policy == FREEZE) {
-                fprintf(stderr, "[INFO] Allowing deadlock to occur.\n");
+                fprintf(stderr, "[INFO] pthread_mutex_lock: Allowing deadlock to occur.\n");
                 unlock_graph();
                 return real_lock(mutex);
             }
