@@ -1,5 +1,6 @@
 #include "graph.h"
-
+#include "config.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h> // For memset
 
@@ -10,11 +11,13 @@
 
 static lock_node_t *lock_table[TABLE_SIZE];
 
-static unsigned int hash_ptr(void *ptr) {
-    return ((unsigned long) ptr >> 6) % TABLE_SIZE;
+static unsigned int hash_ptr(void *ptr)
+{
+    return ((unsigned long)ptr >> 6) % TABLE_SIZE;
 }
 
-void register_lock_owner(pthread_mutex_t *mutex, pthread_t thread_id) {
+void register_lock_owner(pthread_mutex_t *mutex, pthread_t thread_id)
+{
     unsigned int index = hash_ptr(mutex);
 
     lock_node_t *new_node = malloc(sizeof(lock_node_t));
@@ -25,14 +28,17 @@ void register_lock_owner(pthread_mutex_t *mutex, pthread_t thread_id) {
     lock_table[index] = new_node;
 }
 
-void unregister_lock_owner(pthread_mutex_t *mutex) {
+void unregister_lock_owner(pthread_mutex_t *mutex)
+{
     unsigned int index = hash_ptr(mutex);
     lock_node_t **current = &lock_table[index];
 
     // scan this bucket for the lock
-    while (*current) {
+    while (*current)
+    {
         lock_node_t *entry = *current;
-        if (entry->lock_addr == mutex) {
+        if (entry->lock_addr == mutex)
+        {
             *current = entry->next;
             free(entry);
             return;
@@ -41,11 +47,14 @@ void unregister_lock_owner(pthread_mutex_t *mutex) {
     }
 }
 
-pthread_t get_lock_owner(pthread_mutex_t *mutex) {
+pthread_t get_lock_owner(pthread_mutex_t *mutex)
+{
     unsigned int index = hash_ptr(mutex);
     lock_node_t *curr = lock_table[index];
-    while (curr) {
-        if (curr->lock_addr == mutex) {
+    while (curr)
+    {
+        if (curr->lock_addr == mutex)
+        {
             return curr->owner_thread;
         }
         curr = curr->next;
@@ -57,11 +66,13 @@ pthread_t get_lock_owner(pthread_mutex_t *mutex) {
 
 static wait_node_t *wait_table[TABLE_SIZE];
 
-static unsigned int hash_tid(pthread_t tid) {
-    return ((unsigned long) tid) % TABLE_SIZE;
+static unsigned int hash_tid(pthread_t tid)
+{
+    return ((unsigned long)tid) % TABLE_SIZE;
 }
 
-void register_thread_waiting_lock(pthread_t thread, pthread_mutex_t *mutex) {
+void register_thread_waiting_lock(pthread_t thread, pthread_mutex_t *mutex)
+{
     unsigned int idx = hash_tid(thread);
     wait_node_t *node = malloc(sizeof(wait_node_t));
     node->thread = thread;
@@ -70,12 +81,15 @@ void register_thread_waiting_lock(pthread_t thread, pthread_mutex_t *mutex) {
     wait_table[idx] = node;
 }
 
-void unregister_thread_waiting_lock(pthread_t thread) {
+void unregister_thread_waiting_lock(pthread_t thread)
+{
     unsigned int idx = hash_tid(thread);
     wait_node_t **curr = &wait_table[idx];
-    while (*curr) {
+    while (*curr)
+    {
         wait_node_t *entry = *curr;
-        if (pthread_equal(entry->thread, thread)) {
+        if (pthread_equal(entry->thread, thread))
+        {
             *curr = entry->next;
             free(entry);
             return;
@@ -84,11 +98,14 @@ void unregister_thread_waiting_lock(pthread_t thread) {
     }
 }
 
-pthread_mutex_t *get_awaited_lock(pthread_t thread) {
+pthread_mutex_t *get_awaited_lock(pthread_t thread)
+{
     unsigned int index = hash_tid(thread);
     wait_node_t *curr = wait_table[index];
-    while (curr) {
-        if (pthread_equal(curr->thread, thread)) {
+    while (curr)
+    {
+        if (pthread_equal(curr->thread, thread))
+        {
             return curr->lock;
         }
         curr = curr->next;
@@ -101,28 +118,32 @@ pthread_mutex_t *get_awaited_lock(pthread_t thread) {
 /**
  * @return 0 if doesn't contain cycle, 1 if contains cycle
  */
-int contains_cycle(pthread_t curr_thread, pthread_t start_thread, int depth) {
-    if (depth > MAX_DEPTH) {
+int contains_cycle(pthread_t curr_thread, pthread_t start_thread, int depth)
+{
+    if (depth > MAX_DEPTH)
+    {
         return 0; // Graph too deep, give up, assume no cycle
     }
 
     pthread_mutex_t *wanted_lock = get_awaited_lock(curr_thread);
-    if (wanted_lock == NULL) {
+    if (wanted_lock == NULL)
+    {
         return 0;
     }
 
     pthread_t owner = get_lock_owner(wanted_lock);
-    if (owner == 0) {
+    if (owner == 0)
+    {
         return 0;
     }
 
-    if (pthread_equal(owner, start_thread)) {
+    if (pthread_equal(owner, start_thread))
+    {
         return 1;
     }
 
     return contains_cycle(owner, start_thread, depth + 1);
 }
-
 
 // -------- GRAPH INIT --------
 
@@ -135,7 +156,8 @@ static int (*real_lock)(pthread_mutex_t *) = NULL;
 static int (*real_unlock)(pthread_mutex_t *) = NULL;
 
 void init_tables(int (*real_lock_fn)(pthread_mutex_t *),
-                 int (*real_unlock_fn)(pthread_mutex_t *)) {
+                 int (*real_unlock_fn)(pthread_mutex_t *))
+{
     real_lock = real_lock_fn;
     real_unlock = real_unlock_fn;
     memset(lock_table, 0, sizeof(lock_table));
@@ -143,21 +165,81 @@ void init_tables(int (*real_lock_fn)(pthread_mutex_t *),
     pthread_cond_init(&wait_for_young, NULL);
 }
 
-void lock_graph() {
+void lock_graph()
+{
     real_lock(&graph_lock);
 }
 
-void unlock_graph() {
+void unlock_graph()
+{
     real_unlock(&graph_lock);
 }
 
-void wait_for_graph_change() {
+void wait_for_graph_change()
+{
     // Unlocks graph_lock, sleeps, re-locks on wake
     pthread_cond_wait(&wait_for_young, &graph_lock);
 }
 
-void signal_graph_change() {
+void signal_graph_change()
+{
     // Wake up threads waiting for a lock release
     pthread_cond_broadcast(&wait_for_young);
 }
 
+void generate_graph()
+{
+    // If no path is set in config, don't generate anything
+    if (global_config.graph_file_path[0] == '\0')
+    {
+        return;
+    }
+
+    FILE *f = fopen(global_config.graph_file_path, "w");
+    if (!f)
+    {
+        perror("[SENTINEL] Failed to open dot file");
+        return;
+    }
+
+    // DOT Header
+    fprintf(f, "digraph ResourceGraph {\n");
+    fprintf(f, "  rankdir=LR;\n"); // Left-to-Right layout
+    fprintf(f, "  node [fontname=\"Arial\"];\n");
+
+    // Define Nodes (Locks = Box, Threads = Oval)
+    for (int i = 0; i < TABLE_SIZE; i++)
+    {
+        lock_node_t *curr = lock_table[i];
+        while (curr)
+        {
+            fprintf(f, "  \"L_%p\" [label=\"Lock %p\", shape=box, style=filled, fillcolor=lightblue];\n",
+                    (void *)curr->lock_addr, (void *)curr->lock_addr);
+
+            fprintf(f, "  \"L_%p\" -> \"T_%lu\" [label=\"held by\", color=black];\n",
+                    (void *)curr->lock_addr, (unsigned long)curr->owner_thread);
+
+            curr = curr->next;
+        }
+    }
+
+    for (int i = 0; i < TABLE_SIZE; i++)
+    {
+        wait_node_t *curr = wait_table[i];
+        while (curr)
+        {
+            // Thread is red if waiting for something.
+            fprintf(f, "  \"T_%lu\" [label=\"Thread %lu\", shape=ellipse, style=filled, fillcolor=salmon];\n",
+                    (unsigned long)curr->thread, (unsigned long)curr->thread);
+
+            // Edge: Thread -> Lock (Waiting)
+            fprintf(f, "  \"T_%lu\" -> \"L_%p\" [label=\"waits for\", color=red, penwidth=2.0];\n",
+                    (unsigned long)curr->thread, (void *)curr->lock);
+
+            curr = curr->next;
+        }
+    }
+
+    fprintf(f, "}\n");
+    fclose(f);
+}

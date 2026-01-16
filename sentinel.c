@@ -83,6 +83,8 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
             if (global_config.policy == FREEZE)
             {
                 fprintf(stderr, "[INFO] Allowing deadlock to occur.\n");
+                // This is slow so only generating if we're doomed to deadlock anyways.
+                generate_graph(); 
                 unlock_graph();
                 return real_lock(mutex);
             }

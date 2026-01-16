@@ -12,18 +12,20 @@ void unlock_graph();
 void signal_graph_change();
 void wait_for_graph_change();
 
-void print_graph();
+void generate_graph();
 
-typedef struct lock_node {
+typedef struct lock_node
+{
     pthread_mutex_t *lock_addr; // Key
-    pthread_t owner_thread; // Value
-    struct lock_node *next; // Next node in collision chain
+    pthread_t owner_thread;     // Value
+    struct lock_node *next;     // Next node in collision chain
 } lock_node_t;
 
 // Node for Thread->Waiting_for map
-typedef struct wait_node {
-    pthread_t thread; // Key
-    pthread_mutex_t *lock; // Value
+typedef struct wait_node
+{
+    pthread_t thread;       // Key
+    pthread_mutex_t *lock;  // Value
     struct wait_node *next; // Next node in collision chain
 } wait_node_t;
 
