@@ -31,7 +31,7 @@ void load_config() {
                 global_config.policy = RETURN;
             } else if (strcmp(value, "freeze") == 0) {
                 global_config.policy = FREEZE;
-            } else if (strcmp(value, "stall") == 0) {
+            } else if (strcmp(value, "wait_die") == 0) {
                 global_config.policy = WAIT_DIE;
             }
         }
