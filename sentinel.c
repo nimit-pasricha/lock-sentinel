@@ -42,7 +42,6 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
 
     lock_graph();
 
-
     while (1) {
         pthread_t existing_owner = get_lock_owner(mutex);
         if (existing_owner == 0) {
@@ -107,6 +106,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
 int pthread_mutex_unlock(pthread_mutex_t *mutex) {
     lock_graph();
     unregister_lock_owner(mutex);
+    signal_graph_change();
     unlock_graph();
     return real_unlock(mutex);
 }
